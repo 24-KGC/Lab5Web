@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../authContext.tsx';
 
 type Task = {
   _id: string;
@@ -10,17 +11,21 @@ type Task = {
 };
 
 const Homework1: React.FC = () => {
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [editing, setEditing] = useState<Task | null>(null);
+  const { token } = useAuth();
 
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/tasks');
+      const res = await fetch('/api/tasks', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error('Failed to fetch tasks');
       const data = await res.json();
       setTasks(data);
@@ -33,8 +38,8 @@ const Homework1: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (token) fetchTasks();
+  }, [token]);
 
   const handleAddOrEdit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +50,10 @@ const Homework1: React.FC = () => {
         // Update
         const res = await fetch(`/api/tasks/${editing._id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ title, description }),
         });
         if (!res.ok) throw new Error('Failed to update task');
@@ -54,7 +62,10 @@ const Homework1: React.FC = () => {
         // Create
         const res = await fetch('/api/tasks', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ title, description }),
         });
         if (!res.ok) throw new Error('Failed to add task');
@@ -70,7 +81,10 @@ const Homework1: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this task?')) return;
     try {
-      const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error('Failed to delete task');
       fetchTasks();
     } catch (err: any) {
@@ -88,7 +102,10 @@ const Homework1: React.FC = () => {
     try {
       const res = await fetch(`/api/tasks/${task._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ ...task, completed: !task.completed }),
       });
       if (!res.ok) throw new Error('Failed to update task');
